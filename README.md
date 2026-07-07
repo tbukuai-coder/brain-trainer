@@ -2,6 +2,8 @@
 
 A single-file, zero-dependency HTML memory-training game inspired by the Chinese TV show 《最强大脑》 (*The Brain*, Jiangsu TV). Open `index.html` in any modern browser — no build step, no server needed.
 
+**Play online:** https://tbukuai-coder.github.io/brain-trainer/
+
 ## The four challenges
 
 | 项目 | English | Discipline |
