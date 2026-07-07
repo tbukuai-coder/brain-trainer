@@ -1,10 +1,10 @@
 # 最强大脑 · 记忆训练 (Brain Trainer)
 
-A single-file, zero-dependency HTML brain-training game inspired by the Chinese TV show 《最强大脑》 (*The Brain*, Jiangsu TV) — six memory disciplines plus two attention/speed disciplines. Open `index.html` in any modern browser — no build step, no server needed.
+A single-file, zero-dependency HTML brain-training game inspired by the Chinese TV show 《最强大脑》 (*The Brain*, Jiangsu TV) — ten disciplines covering memory, attention, mental math, working memory, and spatial reasoning. Open `index.html` in any modern browser — no build step, no server needed.
 
 **Play online:** https://tbukuai-coder.github.io/brain-trainer/
 
-## The eight challenges
+## The ten challenges
 
 | 项目 | English | Discipline |
 |---|---|---|
@@ -16,6 +16,8 @@ A single-file, zero-dependency HTML brain-training game inspired by the Chinese 
 | 翻牌配对 | Pair Match | Position-binding memory — study an open board of symbol pairs, everything flips face-down, match all pairs with at most 2 wrong flips. |
 | 心算风暴 | Quick Math | Mental arithmetic under a countdown — addition/subtraction, then multiplication, then mixed expressions with standard precedence; time shrinks per level. |
 | 色词对决 | Stroop Test | Attention/inhibition — a color word rendered in a mismatched ink color; tap the swatch matching the *ink*, not the meaning. Streak required per level grows, response window shrinks. |
+| 记忆回溯 | N-Back | Working memory — symbols stream one at a time; tap when the current one matches the symbol N steps back. N climbs 1 → 3, streams get longer and faster. False alarms and misses both fail. |
+| 空间旋转 | Mental Rotation | Spatial reasoning — a random polyomino target; exactly one option is a pure rotation of it, the rest are mirror images. Timed; shapes grow 4×4 → 5×5. |
 
 ## Rules
 

@@ -277,6 +277,29 @@ main{width:min(860px,94vw);flex:1;padding:22px 0 30px}
 .swatch.wrongpick{box-shadow:0 0 0 3px var(--bad)}
 .stroop-bar{min-height:3px;display:flex;justify-content:center;width:100%}
 
+/* n-back game */
+.nback-sym{
+  font-size:clamp(64px,16vw,110px);line-height:1;min-height:1em;
+  color:var(--gold-bright);text-shadow:0 0 30px rgba(255,217,138,.3);
+}
+
+/* rotation game */
+.mini-grid{display:grid;grid-template-columns:repeat(var(--m),var(--cs,16px));gap:2px}
+.mini-cell{
+  width:var(--cs,16px);aspect-ratio:1;border-radius:2px;
+  background:rgba(255,255,255,.04);border:1px solid var(--line);
+}
+.mini-cell.on{background:var(--gold);border-color:var(--gold-bright)}
+.rot-opts{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.rot-opt{
+  padding:10px;border:1px solid var(--line);border-radius:4px;
+  background:var(--panel2);
+  transition:border-color .12s, transform .12s;
+}
+.rot-opt:hover{border-color:var(--muted);transform:translateY(-2px)}
+.rot-opt.correct{border-color:var(--good);box-shadow:0 0 0 2px var(--good)}
+.rot-opt.wrongpick{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad)}
+
 /* banner + game over */
 .banner{
   position:absolute;inset:0;display:grid;place-items:center;
@@ -313,7 +336,7 @@ footer{
   <div class="seal" aria-hidden="true">脑</div>
   <div class="titles">
     <h1>最强大脑 <em>·</em> 记忆训练</h1>
-    <p class="sub">八项挑战 · 逐关升级 · 三次机会 — Brain Trainer</p>
+    <p class="sub">十项挑战 · 逐关升级 · 三次机会 — Brain Trainer</p>
   </div>
   <button id="muteBtn" aria-label="切换音效">音效 开</button>
 </header>
@@ -912,6 +935,162 @@ async function stroopRound(l, s){
   return true;
 }
 
+/* ---------- game 9: 记忆回溯 ---------- */
+const NBACK_SYMS = ['★','▲','●','◆','♠','✿'];
+async function nbackRound(l, s){
+  const n = l < 4 ? 1 : l < 9 ? 2 : 3;
+  const trials = 9 + Math.min(l, 6);
+  const targetCount = n === 1 ? 2 : 3;
+  const per = Math.max(1150, 2000 - l * 80);
+
+  const targets = new Set(shuffle([...Array(trials - n).keys()].map(x => x + n)).slice(0, targetCount));
+  const stream = [];
+  for (let i = 0; i < trials; i++){
+    if (targets.has(i)){
+      stream.push(stream[i - n]);
+    } else {
+      let c;
+      do { c = NBACK_SYMS[rnd(NBACK_SYMS.length)]; } while (i >= n && c === stream[i - n]);
+      stream.push(c);
+    }
+  }
+
+  const st = stageEl();
+  const phase = el('div', 'phase', `图案与「前第 ${n} 个」相同时，立即点击匹配<span class="pen">${n}-back — tap on repeats</span>`);
+  st.append(phase);
+  const counter = el('div', 'card-count', '');
+  const sym = el('div', 'nback-sym', '');
+  st.append(counter, sym);
+  const btn = el('button', 'btn primary', '匹配 !');
+  st.append(btn);
+  let resolver = null;
+  btn.onclick = () => { if (resolver) resolver(true); };
+  btn.focus();
+  await wait(600, s);
+
+  for (let i = 0; i < trials; i++){
+    counter.textContent = `${i + 1} / ${trials}`;
+    sym.textContent = stream[i];
+    sym.style.color = '';
+    const clicked = await Promise.race([
+      new Promise(r => { resolver = r; }),
+      sleep(per).then(() => false),
+    ]);
+    resolver = null;
+    bail(s);
+    const isT = targets.has(i);
+    if (clicked !== isT){
+      sym.style.color = 'var(--bad)';
+      phase.innerHTML = clicked
+        ? `误报 — 第 ${i + 1} 个与前第 ${n} 个并不相同<span class="pen">False alarm</span>`
+        : `漏报 — 第 ${i + 1} 个与第 ${i + 1 - n} 个相同，应当点击<span class="pen">Missed a match</span>`;
+      await wait(2000, s);
+      return false;
+    }
+    if (clicked){ sym.style.color = 'var(--good)'; sTick(); await wait(320, s); }
+    sym.textContent = '·';
+    sym.style.color = 'var(--line)';
+    await wait(260, s);
+  }
+  return true;
+}
+
+/* ---------- game 10: 空间旋转 ---------- */
+function rotCW(g){
+  const n = g.length;
+  const r = Array.from({ length: n }, () => Array(n).fill(0));
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) r[x][n - 1 - y] = g[y][x];
+  return r;
+}
+const mirrorG = g => g.map(row => row.slice().reverse());
+const gkey = g => g.flat().join('');
+function genBlob(n, fill){
+  const g = Array.from({ length: n }, () => Array(n).fill(0));
+  let y = rnd(n), x = rnd(n);
+  g[y][x] = 1;
+  let cnt = 1, guard = 300;
+  while (cnt < fill && guard--){
+    const d = [[0,1],[0,-1],[1,0],[-1,0]][rnd(4)];
+    const ny = y + d[0], nx = x + d[1];
+    if (ny < 0 || nx < 0 || ny >= n || nx >= n) continue;
+    y = ny; x = nx;
+    if (!g[y][x]){ g[y][x] = 1; cnt++; }
+  }
+  return cnt === fill ? g : null;
+}
+function miniGrid(g, cs){
+  const d = el('div', 'mini-grid');
+  d.style.setProperty('--m', g.length);
+  if (cs) d.style.setProperty('--cs', cs);
+  g.forEach(row => row.forEach(v => d.append(el('span', 'mini-cell' + (v ? ' on' : '')))));
+  return d;
+}
+async function rotRound(l, s){
+  const n = l < 5 ? 4 : 5;
+  const fill = n === 4 ? 6 : 8;
+  const timeMs = Math.max(6000, 13000 - l * 500);
+
+  // find a chiral, rotation-asymmetric pattern so exactly one option is a true rotation
+  let g = null, rots = null, mirs = null;
+  for (let t = 0; t < 120; t++){
+    const cand = genBlob(n, fill);
+    if (!cand) continue;
+    const r1 = rotCW(cand), r2 = rotCW(r1), r3 = rotCW(r2);
+    const rk = new Set([gkey(cand), gkey(r1), gkey(r2), gkey(r3)]);
+    if (rk.size < 4) continue;
+    const m0 = mirrorG(cand), m1 = rotCW(m0), m2 = rotCW(m1), m3 = rotCW(m2);
+    const ms = [m0, m1, m2, m3];
+    if (ms.some(mm => rk.has(gkey(mm)))) continue;
+    g = cand; rots = [r1, r2, r3]; mirs = ms;
+    break;
+  }
+  if (!g) return true;
+
+  const correct = rots[rnd(3)];
+  const seen = new Set(); const ds = [];
+  for (const mm of shuffle(mirs)){
+    const kk = gkey(mm);
+    if (!seen.has(kk)){ seen.add(kk); ds.push(mm); }
+    if (ds.length === 3) break;
+  }
+  const opts = shuffle([{ g: correct, ok: true }].concat(ds.map(d => ({ g: d, ok: false }))));
+
+  const st = stageEl();
+  const phase = el('div', 'phase', '哪个是目标图形<b>旋转</b>后的样子？镜像不算<span class="pen">Pick the rotation — mirrors are traps</span>');
+  st.append(phase);
+  st.append(miniGrid(g, '22px'));
+  const row = el('div', 'rot-opts');
+  st.append(row);
+  st.append(progressBar(timeMs));
+  let resolver = null;
+  const btns = opts.map((o, i) => {
+    const b = el('button', 'rot-opt');
+    b.append(miniGrid(o.g, '15px'));
+    b.onclick = () => { if (resolver) resolver(i); };
+    row.append(b);
+    return b;
+  });
+  const pick = await Promise.race([
+    new Promise(r => { resolver = r; }),
+    sleep(timeMs).then(() => null),
+  ]);
+  resolver = null;
+  bail(s);
+  const ci = opts.findIndex(o => o.ok);
+  if (pick !== null && opts[pick].ok){
+    btns[pick].classList.add('correct');
+    sTick();
+    return true;
+  }
+  btns[ci].classList.add('correct');
+  if (pick !== null) btns[pick].classList.add('wrongpick');
+  phase.innerHTML = pick === null
+    ? '时间到<span class="pen">Time up</span>'
+    : '那是镜像<span class="pen">That was a mirror</span>';
+  await wait(2000, s);
+  return false;
+}
+
 /* ---------- game registry ---------- */
 const GAMES = [
   {
@@ -961,6 +1140,18 @@ const GAMES = [
     desc: '点击文字的颜色而非字义，连对通关。',
     how: ['屏幕显示一个颜色字，字义与颜色常常不符', '点击下方与文字颜色相同的色块', '连对指定次数通关 — 超时或点错即失误'],
     round: stroopRound,
+  },
+  {
+    id: 'nback', glyph: '溯', name: '记忆回溯', en: 'N-Back',
+    desc: '图案流中，与前第 N 个相同时立即点击。',
+    how: ['图案逐个闪现，与「前第 N 个」相同时点击匹配', '点错（误报）或漏点（漏报）都算失误', '关数越高：N 从 1 升到 3，图案流更长更快'],
+    round: nbackRound,
+  },
+  {
+    id: 'rot', glyph: '转', name: '空间旋转', en: 'Mental Rotation',
+    desc: '找出目标图形旋转后的样子，镜像是陷阱。',
+    how: ['看清目标图形的形状', '选项中只有一个是它的纯旋转，其余是镜像', '限时作答 — 图形逐关变复杂、时间缩短'],
+    round: rotRound,
   },
 ];
 
