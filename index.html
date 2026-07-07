@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>最强大脑 · 记忆训练</title>
+<style>
+:root{
+  --bg:#0A0F23;
+  --panel:#131A36;
+  --panel2:#1B2447;
+  --line:#26305C;
+  --gold:#E8B54A;
+  --gold-bright:#FFD98A;
+  --ink:#EEEAD9;
+  --muted:#8C94B8;
+  --good:#46D69A;
+  --bad:#F0647A;
+  --serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","SimSun",serif;
+  --sans:"PingFang SC","Hiragino Sans GB","Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(ellipse 70% 45% at 50% -5%, rgba(232,181,74,.10), transparent 70%);
+  color:var(--ink);
+  font-family:var(--sans);
+  line-height:1.55;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-height:100vh;
+}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* ---------- masthead ---------- */
+header{
+  width:min(860px,94vw);
+  display:flex;align-items:center;gap:16px;
+  padding:26px 4px 18px;
+  border-bottom:1px solid var(--line);
+}
+.seal{
+  width:52px;height:52px;flex:none;
+  display:grid;place-items:center;
+  font-family:var(--serif);font-size:30px;font-weight:700;color:var(--gold);
+  border:2px solid var(--gold);border-radius:6px;
+  transform:rotate(-4deg);
+  box-shadow:0 0 24px rgba(232,181,74,.25), inset 0 0 10px rgba(232,181,74,.12);
+}
+.titles{flex:1;min-width:0}
+h1{
+  font-family:var(--serif);font-size:clamp(22px,4.5vw,30px);font-weight:700;
+  letter-spacing:.06em;color:var(--ink);text-wrap:balance;
+}
+h1 em{font-style:normal;color:var(--gold)}
+.sub{font-size:13px;color:var(--muted);letter-spacing:.04em;margin-top:2px}
+#muteBtn{
+  flex:none;font-size:14px;color:var(--muted);
+  border:1px solid var(--line);border-radius:4px;padding:7px 12px;
+}
+#muteBtn:hover{color:var(--gold);border-color:var(--gold)}
+
+main{width:min(860px,94vw);flex:1;padding:22px 0 30px}
+
+/* ---------- menu ---------- */
+.menu-label{
+  font-size:12px;letter-spacing:.28em;color:var(--muted);
+  text-transform:uppercase;margin:6px 2px 14px;
+}
+.menu-label b{color:var(--gold);font-weight:600;letter-spacing:.1em;font-size:15px;margin-right:10px}
+#menuCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.gcard{
+  display:flex;align-items:center;gap:16px;text-align:left;
+  background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:18px;
+  transition:border-color .18s, transform .18s, box-shadow .18s;
+}
+.gcard:hover{
+  border-color:var(--gold);transform:translateY(-2px);
+  box-shadow:0 8px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(232,181,74,.15);
+}
+.glyph{
+  width:56px;height:56px;flex:none;display:grid;place-items:center;
+  font-family:var(--serif);font-size:30px;font-weight:700;color:var(--gold);
+  border:1.5px solid var(--gold);border-radius:5px;
+  background:rgba(232,181,74,.06);
+}
+.gmeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.gname{font-size:17px;font-weight:600;letter-spacing:.05em}
+.gen{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+.gdesc{font-size:13px;color:var(--muted);margin-top:4px}
+.gbest{
+  flex:none;align-self:flex-start;font-size:11px;letter-spacing:.06em;
+  color:var(--gold);border:1px solid rgba(232,181,74,.4);border-radius:3px;
+  padding:3px 8px;white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.gbest.none{color:var(--muted);border-color:var(--line)}
+
+/* ---------- game screen ---------- */
+#hud{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:10px 0 16px;
+}
+#backBtn{
+  font-size:13px;color:var(--muted);border:1px solid var(--line);
+  border-radius:4px;padding:6px 12px;
+}
+#backBtn:hover{color:var(--ink);border-color:var(--muted)}
+#hudName{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.08em;color:var(--gold)}
+#hudLevel{
+  font-size:13px;letter-spacing:.08em;color:var(--ink);
+  border:1px solid var(--line);border-radius:3px;padding:4px 10px;
+  background:var(--panel);font-variant-numeric:tabular-nums;
+}
+#hudLives{font-size:16px;color:var(--bad);letter-spacing:.1em}
+#hudLives .dead{color:var(--line)}
+#hudBest{margin-left:auto;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.06em}
+
+#stage{
+  position:relative;
+  min-height:420px;
+  background:var(--panel);
+  background-image:radial-gradient(ellipse 60% 55% at 50% 0%, rgba(232,181,74,.07), transparent 70%);
+  border:1px solid var(--line);border-radius:4px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:22px;padding:34px 20px;
+}
+
+.phase{font-size:16px;letter-spacing:.06em;color:var(--ink);text-align:center;text-wrap:balance}
+.phase .pen{display:block;font-size:11px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-top:4px}
+
+.pbar{width:min(340px,80%);height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.pfill{width:100%;height:100%;background:var(--gold);transition:width 0ms linear}
+
+/* intro */
+.intro{display:flex;flex-direction:column;align-items:center;gap:16px;max-width:440px;text-align:center}
+.intro-glyph{
+  width:72px;height:72px;display:grid;place-items:center;
+  font-family:var(--serif);font-size:40px;font-weight:700;color:var(--gold);
+  border:2px solid var(--gold);border-radius:6px;transform:rotate(-4deg);
+  box-shadow:0 0 30px rgba(232,181,74,.18);
+}
+.intro h2{font-family:var(--serif);font-size:24px;letter-spacing:.1em}
+.how{list-style:none;display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--muted)}
+.how li::before{content:"—";color:var(--gold);margin-right:8px}
+
+.btn{
+  font-size:15px;letter-spacing:.12em;
+  border:1px solid var(--line);border-radius:4px;
+  padding:11px 30px;color:var(--ink);background:var(--panel2);
+  transition:border-color .15s, background .15s;
+}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{
+  color:#181000;background:var(--gold);border-color:var(--gold);font-weight:600;
+}
+.btn.primary:hover{background:var(--gold-bright);border-color:var(--gold-bright)}
+.btnrow{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+/* digit game */
+.digits{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-size:clamp(34px,8vw,58px);font-weight:600;
+  letter-spacing:.35em;color:var(--gold-bright);
+  text-shadow:0 0 26px rgba(255,217,138,.3);
+  text-align:center;word-break:break-all;max-width:92%;
+  line-height:1.4;
+}
+.recall-form{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.digit-input{
+  font-family:var(--mono);font-size:26px;letter-spacing:.25em;text-align:center;
+  width:min(360px,76vw);padding:12px 14px;
+  color:var(--ink);background:var(--bg);
+  border:1px solid var(--line);border-radius:4px;
+}
+.digit-input:focus{border-color:var(--gold)}
+.cmp{display:flex;flex-direction:column;gap:4px;align-items:center}
+.cmp-label{font-size:11px;letter-spacing:.2em;color:var(--muted);margin-top:8px}
+.cmp-row{font-family:var(--mono);font-size:28px;letter-spacing:.3em;word-break:break-all;text-align:center;max-width:88vw}
+.cmp-row .ok{color:var(--good)}
+.cmp-row .err{color:var(--bad)}
+
+/* grid game */
+.grid{
+  display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));
+  gap:8px;width:min(400px,86vw);
+}
+.cell{
+  aspect-ratio:1;border-radius:4px;
+  background:var(--panel2);border:1px solid var(--line);
+  transition:background .12s, border-color .12s, box-shadow .12s;
+}
+.cell:not(:disabled):hover{border-color:var(--muted)}
+.cell.lit{background:var(--gold);border-color:var(--gold-bright);box-shadow:0 0 18px rgba(232,181,74,.45)}
+.cell.hit{background:var(--gold);border-color:var(--gold-bright)}
+.cell.miss{background:var(--bad);border-color:var(--bad)}
+.cell.reveal{background:transparent;border:2px dashed var(--gold)}
+
+/* card game */
+.card-slot{min-height:190px;display:grid;place-items:center}
+.card-count{font-family:var(--mono);font-size:13px;color:var(--muted);letter-spacing:.2em;font-variant-numeric:tabular-nums}
+.pcard{
+  position:relative;width:66px;height:92px;border-radius:7px;
+  background:#F7F3E6;color:#20222E;
+  border:1px solid #C9C2AA;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:var(--mono);
+  box-shadow:0 4px 14px rgba(0,0,0,.45);
+  transition:transform .12s, box-shadow .12s;
+}
+.pcard.red{color:#C43B4E}
+.pcard .cr{font-size:20px;font-weight:700;line-height:1}
+.pcard .cs{font-size:26px;line-height:1.1}
+.pcard.big{width:132px;height:184px}
+.pcard.big .cr{font-size:44px}
+.pcard.big .cs{font-size:56px}
+.card-pool{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:560px}
+.card-pool .pcard{cursor:pointer}
+.card-pool .pcard:hover{transform:translateY(-4px)}
+.pcard.picked{opacity:.45;transform:none;cursor:default}
+.pcard.wrong{box-shadow:0 0 0 3px var(--bad)}
+.ord{
+  position:absolute;top:-9px;right:-9px;
+  width:22px;height:22px;border-radius:50%;
+  display:grid;place-items:center;
+  font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;
+  background:var(--gold);color:#181000;
+}
+.ord.reveal{background:var(--bad);color:#fff}
+
+/* change game */
+.sym-grid{
+  display:grid;grid-template-columns:repeat(var(--c),minmax(0,1fr));
+  gap:8px;width:min(460px,90vw);
+}
+.sym{
+  aspect-ratio:1;border-radius:4px;font-size:clamp(20px,4.6vw,30px);line-height:1;
+  display:grid;place-items:center;
+  background:var(--panel2);border:1px solid var(--line);
+  transition:border-color .12s;
+}
+.sym:not(:disabled):hover{border-color:var(--muted)}
+.sym.blank{color:var(--line);font-family:var(--mono);font-size:18px}
+.sym.hit{border-color:var(--good);box-shadow:0 0 0 2px var(--good)}
+.sym.miss{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad)}
+.sym.reveal{border:2px dashed var(--gold)}
+
+/* banner + game over */
+.banner{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-family:var(--serif);font-size:34px;font-weight:700;letter-spacing:.15em;
+  background:rgba(10,15,35,.82);border-radius:4px;z-index:5;
+}
+.banner.good{color:var(--good)}
+.banner.bad{color:var(--bad)}
+.over{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.over-num{
+  font-family:var(--mono);font-size:76px;font-weight:700;color:var(--gold-bright);
+  font-variant-numeric:tabular-nums;line-height:1;
+  text-shadow:0 0 34px rgba(255,217,138,.35);
+}
+.over-label{font-size:14px;letter-spacing:.2em;color:var(--muted)}
+.over-best{font-size:13px;color:var(--ink);margin-top:10px;font-variant-numeric:tabular-nums}
+
+footer{
+  width:min(860px,94vw);
+  padding:14px 4px 26px;
+  border-top:1px solid var(--line);
+  font-size:12px;color:var(--muted);letter-spacing:.05em;
+  display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important;animation:none !important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="seal" aria-hidden="true">脑</div>
+  <div class="titles">
+    <h1>最强大脑 <em>·</em> 记忆训练</h1>
+    <p class="sub">四项挑战 · 逐关升级 · 三次机会 — Memory Trainer</p>
+  </div>
+  <button id="muteBtn" aria-label="切换音效">音效 开</button>
+</header>
+
+<main>
+  <section id="menu">
+    <p class="menu-label"><b>选择挑战项目</b>Choose your challenge</p>
+    <div id="menuCards"></div>
+  </section>
+
+  <section id="game" hidden>
+    <div id="hud">
+      <button id="backBtn">‹ 返回</button>
+      <span id="hudName"></span>
+      <span id="hudLevel"></span>
+      <span id="hudLives" aria-label="剩余机会"></span>
+      <span id="hudBest"></span>
+    </div>
+    <div id="stage"></div>
+  </section>
+</main>
+
+<footer>
+  <span>灵感来自江苏卫视《最强大脑》</span>
+  <span>成绩保存在本机浏览器 · 单文件 · 零依赖</span>
+</footer>
+
+<script>
+'use strict';
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+function el(tag, cls, html){
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html !== undefined) e.innerHTML = html;
+  return e;
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const once = (elm, ev) => new Promise(r => elm.addEventListener(ev, r, { once: true }));
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function rnd(n){ return Math.floor(Math.random() * n); }
+
+/* ---------- persistence ---------- */
+const BESTS_KEY = 'zqdn-bests';
+let bests = {};
+try { bests = JSON.parse(localStorage.getItem(BESTS_KEY) || '{}'); } catch(e){}
+function saveBest(id, lvl){
+  if ((bests[id] || 0) < lvl){
+    bests[id] = lvl;
+    try { localStorage.setItem(BESTS_KEY, JSON.stringify(bests)); } catch(e){}
+  }
+}
+
+/* ---------- audio (subtle WebAudio cues, no assets) ---------- */
+let actx = null;
+let muted = false;
+try { muted = localStorage.getItem('zqdn-muted') === '1'; } catch(e){}
+function initAudio(){
+  if (!actx){
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function tone(freq, dur, type, vol, delay){
+  if (muted || !actx) return;
+  const t = actx.currentTime + (delay || 0);
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type || 'sine';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.12, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+const sTick = () => tone(560, 0.07, 'sine', 0.08);
+const sGood = () => { tone(660, 0.12, 'sine', 0.12); tone(990, 0.16, 'sine', 0.12, 0.09); };
+const sBad  = () => tone(160, 0.3, 'square', 0.06);
+function renderMute(){ $('#muteBtn').textContent = muted ? '音效 关' : '音效 开'; }
+$('#muteBtn') && ($('#muteBtn').onclick = () => {
+  muted = !muted;
+  try { localStorage.setItem('zqdn-muted', muted ? '1' : '0'); } catch(e){}
+  renderMute();
+});
+
+/* ---------- session control ---------- */
+let session = 0, cur = null, level = 1, lives = 3;
+function bail(s){ if (s !== session) throw new Error('cancelled'); }
+async function wait(ms, s){ await sleep(ms); bail(s); }
+function stageEl(){ const st = $('#stage'); st.innerHTML = ''; return st; }
+function progressBar(ms){
+  const w = el('div', 'pbar'), f = el('div', 'pfill');
+  w.append(f);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    f.style.transitionDuration = ms + 'ms';
+    f.style.width = '0%';
+  }));
+  return w;
+}
+
+/* ---------- game 1: 数字闪记 ---------- */
+async function digitRound(l, s){
+  const n = l + 2;
+  let d = '';
+  for (let i = 0; i < n; i++) d += rnd(10);
+  const showMs = Math.max(1200, n * 420);
+
+  let st = stageEl();
+  st.append(el('div', 'phase', `记住这 ${n} 位数字<span class="pen">Memorize</span>`));
+  st.append(el('div', 'digits', d));
+  st.append(progressBar(showMs));
+  await wait(showMs, s);
+
+  st = stageEl();
+  st.append(el('div', 'phase', '凭记忆输入<span class="pen">Recall</span>'));
+  const form = el('form', 'recall-form');
+  const inp = el('input', 'digit-input');
+  inp.type = 'text'; inp.inputMode = 'numeric'; inp.autocomplete = 'off';
+  inp.setAttribute('aria-label', '输入数字');
+  const sub = el('button', 'btn primary', '确认'); sub.type = 'submit';
+  form.append(inp, sub); st.append(form);
+  inp.focus();
+  const ans = await new Promise(res => {
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      res(inp.value.replace(/\D/g, ''));
+    }, { once: true });
+  });
+  bail(s);
+
+  const ok = ans === d;
+  if (ok) return true;
+
+  st = stageEl();
+  st.append(el('div', 'phase', '差一点 — 对比一下'));
+  let row1 = '', row2 = '';
+  const len = Math.max(d.length, ans.length);
+  for (let i = 0; i < len; i++){
+    const c = d[i] || '·', u = ans[i] || '·';
+    row1 += `<span>${c}</span>`;
+    row2 += `<span class="${d[i] && d[i] === ans[i] ? 'ok' : 'err'}">${u}</span>`;
+  }
+  const cmp = el('div', 'cmp');
+  cmp.innerHTML = `<div class="cmp-label">正确答案</div><div class="cmp-row">${row1}</div>` +
+                  `<div class="cmp-label">你的输入</div><div class="cmp-row">${row2}</div>`;
+  st.append(cmp);
+  const cont = el('button', 'btn', '继续');
+  st.append(cont);
+  await once(cont, 'click'); bail(s);
+  return false;
+}
+
+/* ---------- game 2: 方格闪现 ---------- */
+async function gridRound(l, s){
+  const size = l < 4 ? 3 : l < 8 ? 4 : l < 12 ? 5 : 6;
+  const count = Math.min(size * size - 3, l + 2);
+  const showMs = Math.max(1300, 2400 - l * 80);
+
+  const st = stageEl();
+  const phase = el('div', 'phase', `记住 ${count} 个亮起的方格<span class="pen">Memorize</span>`);
+  st.append(phase);
+  const grid = el('div', 'grid');
+  grid.style.setProperty('--n', size);
+  const cells = [];
+  for (let i = 0; i < size * size; i++){
+    const c = el('button', 'cell'); c.disabled = true;
+    cells.push(c); grid.append(c);
+  }
+  st.append(grid);
+  const targets = new Set(shuffle([...Array(size * size).keys()]).slice(0, count));
+  targets.forEach(i => cells[i].classList.add('lit'));
+  const bar = progressBar(showMs);
+  st.append(bar);
+  await wait(showMs, s);
+
+  cells.forEach(c => { c.classList.remove('lit'); c.disabled = false; });
+  bar.remove();
+  phase.innerHTML = '点击刚才亮起的方格<span class="pen">Recall</span>';
+
+  return await new Promise(resolve => {
+    let found = 0, done = false;
+    cells.forEach((c, i) => c.addEventListener('click', () => {
+      if (done || c.classList.contains('hit')) return;
+      if (targets.has(i)){
+        c.classList.add('hit'); sTick(); found++;
+        if (found === count){ done = true; resolve(true); }
+      } else {
+        done = true;
+        c.classList.add('miss');
+        targets.forEach(t => {
+          if (!cells[t].classList.contains('hit')) cells[t].classList.add('reveal');
+        });
+        setTimeout(() => resolve(false), 1500);
+      }
+    }));
+  });
+}
+
+/* ---------- game 3: 扑克速记 ---------- */
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SUITS = [['♠', false], ['♥', true], ['♦', true], ['♣', false]];
+function drawCards(n){
+  const deck = [];
+  for (const r of RANKS) for (const [su, red] of SUITS) deck.push({ r, su, red });
+  return shuffle(deck).slice(0, n);
+}
+function cardEl(c, big){
+  const d = el('div', 'pcard' + (c.red ? ' red' : '') + (big ? ' big' : ''));
+  d.innerHTML = `<span class="cr">${c.r}</span><span class="cs">${c.su}</span>`;
+  return d;
+}
+async function cardRound(l, s){
+  const n = Math.min(l + 2, 12);
+  const per = Math.max(520, 950 - l * 45);
+  const cards = drawCards(n);
+
+  let st = stageEl();
+  st.append(el('div', 'phase', `按顺序记住 ${n} 张牌<span class="pen">Memorize the sequence</span>`));
+  const slot = el('div', 'card-slot');
+  const counter = el('div', 'card-count');
+  st.append(slot, counter);
+  for (let i = 0; i < n; i++){
+    counter.textContent = `${i + 1} / ${n}`;
+    slot.innerHTML = '';
+    slot.append(cardEl(cards[i], true));
+    sTick();
+    await wait(per, s);
+    slot.innerHTML = '';
+    await wait(170, s);
+  }
+
+  st = stageEl();
+  st.append(el('div', 'phase', '按出现顺序点击这些牌<span class="pen">Tap in original order</span>'));
+  const pool = el('div', 'card-pool');
+  st.append(pool);
+  const elems = new Map();
+  return await new Promise(resolve => {
+    let next = 0, done = false;
+    shuffle(cards).forEach(c => {
+      const b = cardEl(c, false);
+      b.tabIndex = 0;
+      b.setAttribute('role', 'button');
+      elems.set(c, b);
+      const pick = () => {
+        if (done || b.classList.contains('picked')) return;
+        const idx = cards.indexOf(c);
+        if (idx === next){
+          b.classList.add('picked');
+          b.append(el('span', 'ord', String(idx + 1)));
+          sTick();
+          next++;
+          if (next === n){ done = true; resolve(true); }
+        } else {
+          done = true;
+          b.classList.add('wrong');
+          cards.forEach((cc, k) => {
+            const e2 = elems.get(cc);
+            if (!e2.classList.contains('picked')) e2.append(el('span', 'ord reveal', String(k + 1)));
+          });
+          setTimeout(() => resolve(false), 2000);
+        }
+      };
+      b.addEventListener('click', pick);
+      b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+      pool.append(b);
+    });
+  });
+}
+
+/* ---------- game 4: 微观辨变 ---------- */
+const FAMILIES = [
+  ['😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
+  ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'],
+  ['🕐','🕑','🕒','🕓','🕔','🕕','🕖','🕗','🕘','🕙','🕚','🕛'],
+  ['♔','♕','♖','♗','♘','♙','♚','♛','♜','♝','♞','♟'],
+  ['▲','△','▼','▽','◆','◇','●','○','■','□'],
+];
+async function changeRound(l, s){
+  const cells = Math.min(28, 8 + l * 2);
+  const cols = cells <= 12 ? 4 : cells <= 18 ? 5 : cells <= 24 ? 6 : 7;
+  const study = Math.max(1600, 4200 - l * 260);
+  const fam = FAMILIES[rnd(FAMILIES.length)];
+  const syms = Array.from({ length: cells }, () => fam[rnd(fam.length)]);
+
+  const st = stageEl();
+  const phase = el('div', 'phase', '记住每个位置的图案<span class="pen">Study the board</span>');
+  st.append(phase);
+  const grid = el('div', 'sym-grid');
+  grid.style.setProperty('--c', cols);
+  const cellEls = syms.map(sym => {
+    const c = el('button', 'sym', sym);
+    c.disabled = true;
+    grid.append(c);
+    return c;
+  });
+  st.append(grid);
+  const bar = progressBar(study);
+  st.append(bar);
+  await wait(study, s);
+
+  cellEls.forEach(c => { c.textContent = '?'; c.classList.add('blank'); });
+  bar.remove();
+  await wait(800, s);
+
+  const idx = rnd(cells);
+  const old = syms[idx];
+  let nu;
+  do { nu = fam[rnd(fam.length)]; } while (nu === old);
+  syms[idx] = nu;
+  cellEls.forEach((c, i) => { c.textContent = syms[i]; c.classList.remove('blank'); c.disabled = false; });
+  phase.innerHTML = '有一个图案变了 — 点击它<span class="pen">One symbol changed</span>';
+
+  return await new Promise(resolve => {
+    let done = false;
+    cellEls.forEach((c, i) => c.addEventListener('click', () => {
+      if (done) return;
+      done = true;
+      if (i === idx){
+        c.classList.add('hit');
+        resolve(true);
+      } else {
+        c.classList.add('miss');
+        cellEls[idx].classList.add('reveal');
+        cellEls[idx].textContent = old + ' → ' + nu;
+        cellEls[idx].style.fontSize = 'clamp(11px,2.4vw,16px)';
+        setTimeout(() => resolve(false), 1800);
+      }
+    }));
+  });
+}
+
+/* ---------- game registry ---------- */
+const GAMES = [
+  {
+    id: 'digits', glyph: '数', name: '数字闪记', en: 'Digit Flash',
+    desc: '数字快闪后凭记忆输入，每关加一位。',
+    how: ['一串数字短暂显示，看完即消失', '凭记忆完整输入，一位不差才算通过', '从 3 位开始，每关加 1 位，共 3 次机会'],
+    round: digitRound,
+  },
+  {
+    id: 'grid', glyph: '格', name: '方格闪现', en: 'Grid Flash',
+    desc: '记住亮起的方格位置，棋盘逐关扩大。',
+    how: ['棋盘上若干方格亮起后熄灭', '点出所有刚才亮起的位置，点错即失误', '关数越高：方格更多、棋盘更大、时间更短'],
+    round: gridRound,
+  },
+  {
+    id: 'cards', glyph: '牌', name: '扑克速记', en: 'Card Recall',
+    desc: '按出现顺序记牌，再从乱序中按原序点出。',
+    how: ['扑克牌逐张闪现，记住出现顺序', '随后牌被打乱，按原顺序依次点击', '从 3 张开始逐关加一张，节奏越来越快'],
+    round: cardRound,
+  },
+  {
+    id: 'change', glyph: '辨', name: '微观辨变', en: 'Spot the Change',
+    desc: '记住整版图案，找出唯一变化的那一个。',
+    how: ['整版相似图案显示数秒，用心记住每个位置', '短暂遮挡后，其中一个图案被替换', '点出变化的那一格 — 观察时间逐关缩短'],
+    round: changeRound,
+  },
+];
+
+/* ---------- controller ---------- */
+function renderMenu(){
+  const m = $('#menuCards');
+  m.innerHTML = '';
+  for (const g of GAMES){
+    const c = el('button', 'gcard');
+    const best = bests[g.id];
+    c.innerHTML =
+      `<span class="glyph" aria-hidden="true">${g.glyph}</span>` +
+      `<span class="gmeta"><span class="gname">${g.name}</span><span class="gen">${g.en}</span><span class="gdesc">${g.desc}</span></span>` +
+      `<span class="gbest${best ? '' : ' none'}">${best ? '最佳 第' + best + '关' : '未挑战'}</span>`;
+    c.onclick = () => openGame(g);
+    m.append(c);
+  }
+}
+function hud(){
+  $('#hudName').textContent = cur.name;
+  $('#hudLevel').textContent = `第 ${level} 关`;
+  $('#hudLives').innerHTML = '♥'.repeat(lives) + `<span class="dead">${'♥'.repeat(3 - lives)}</span>`;
+  $('#hudBest').textContent = bests[cur.id] ? `历史最佳 第 ${bests[cur.id]} 关` : '首次挑战';
+}
+function openGame(g){
+  session++;
+  const s = session;
+  cur = g; level = 1; lives = 3;
+  $('#menu').hidden = true;
+  $('#game').hidden = false;
+  hud();
+  const st = stageEl();
+  const intro = el('div', 'intro');
+  intro.append(el('div', 'intro-glyph', g.glyph));
+  intro.append(el('h2', '', g.name));
+  const ul = el('ul', 'how');
+  g.how.forEach(h => ul.append(el('li', '', h)));
+  intro.append(ul);
+  const b = el('button', 'btn primary', '开始挑战');
+  intro.append(b);
+  st.append(intro);
+  b.onclick = () => { initAudio(); runLoop(s); };
+}
+async function banner(txt, good, s){
+  const b = el('div', 'banner ' + (good ? 'good' : 'bad'), txt);
+  $('#stage').append(b);
+  await wait(good ? 700 : 900, s);
+  b.remove();
+}
+async function runLoop(s){
+  try {
+    while (lives > 0){
+      hud();
+      const ok = await cur.round(level, s);
+      bail(s);
+      if (ok){
+        saveBest(cur.id, level);
+        sGood();
+        await banner('通 过', true, s);
+        level++;
+      } else {
+        lives--;
+        sBad();
+        hud();
+        if (lives > 0) await banner(`失误 · 还剩 ${lives} 次机会`, false, s);
+      }
+    }
+    gameOver();
+  } catch (e) { /* session cancelled */ }
+}
+function gameOver(){
+  const passed = level - 1;
+  const st = stageEl();
+  const over = el('div', 'over');
+  over.innerHTML =
+    `<div class="over-label">挑战结束 · 本次通过</div>` +
+    `<div class="over-num">${passed}</div>` +
+    `<div class="over-label">关</div>` +
+    `<div class="over-best">历史最佳：${bests[cur.id] ? '第 ' + bests[cur.id] + ' 关' : '—'}</div>`;
+  st.append(over);
+  const row = el('div', 'btnrow');
+  const again = el('button', 'btn primary', '再来一次');
+  again.onclick = () => openGame(cur);
+  const back = el('button', 'btn', '返回菜单');
+  back.onclick = goMenu;
+  row.append(again, back);
+  st.append(row);
+}
+function goMenu(){
+  session++;
+  $('#game').hidden = true;
+  $('#menu').hidden = false;
+  renderMenu();
+}
+$('#backBtn').onclick = goMenu;
+
+renderMute();
+renderMenu();
+</script>
+</body>
+</html>
