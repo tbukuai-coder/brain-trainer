@@ -4,7 +4,7 @@ A single-file, zero-dependency HTML memory-training game inspired by the Chinese
 
 **Play online:** https://tbukuai-coder.github.io/brain-trainer/
 
-## The four challenges
+## The six challenges
 
 | 项目 | English | Discipline |
 |---|---|---|
@@ -12,10 +12,12 @@ A single-file, zero-dependency HTML memory-training game inspired by the Chinese
 | 方格闪现 | Grid Flash | Spatial memory — cells light up on a board, tap them back. Board grows 3×3 → 6×6, display time shrinks. |
 | 扑克速记 | Card Recall | Sequence memory — playing cards flash one by one; tap them back in original order from a shuffled pool. |
 | 微观辨变 | Spot the Change | Observation memory (水哥-style) — study a board of near-identical symbols; one changes; find it. |
+| 顺序追光 | Sequence Trace | Temporal-spatial memory (Simon-style) — cells light up one after another; repeat the exact order. Sequence grows, pace quickens. |
+| 翻牌配对 | Pair Match | Position-binding memory — study an open board of symbol pairs, everything flips face-down, match all pairs with at most 2 wrong flips. |
 
 ## Rules
 
-- 3 lives per run; a mistake costs one life and replays the same level.
+- 3 lives per run; a mistake costs one life and replays the same level. (Pair Match additionally allows 2 wrong flips within a level before it counts as a mistake.)
 - Passing a level advances you; your best level per game is saved in `localStorage` (key `zqdn-bests`).
 - Sound cues use WebAudio (no audio assets); toggle with the 音效 button, persisted in `localStorage`.
 

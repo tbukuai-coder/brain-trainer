@@ -190,6 +190,7 @@ main{width:min(860px,94vw);flex:1;padding:22px 0 30px}
   gap:8px;width:min(400px,86vw);
 }
 .cell{
+  position:relative;
   aspect-ratio:1;border-radius:4px;
   background:var(--panel2);border:1px solid var(--line);
   transition:background .12s, border-color .12s, box-shadow .12s;
@@ -287,7 +288,7 @@ footer{
   <div class="seal" aria-hidden="true">脑</div>
   <div class="titles">
     <h1>最强大脑 <em>·</em> 记忆训练</h1>
-    <p class="sub">四项挑战 · 逐关升级 · 三次机会 — Memory Trainer</p>
+    <p class="sub">六项挑战 · 逐关升级 · 三次机会 — Memory Trainer</p>
   </div>
   <button id="muteBtn" aria-label="切换音效">音效 开</button>
 </header>
@@ -625,6 +626,133 @@ async function changeRound(l, s){
   });
 }
 
+/* ---------- game 5: 顺序追光 ---------- */
+async function seqRound(l, s){
+  const size = l < 6 ? 3 : l < 11 ? 4 : 5;
+  const len = Math.min(l + 2, size * size);
+  const per = Math.max(380, 660 - l * 25);
+
+  const st = stageEl();
+  const phase = el('div', 'phase', `记住 ${len} 步亮起顺序<span class="pen">Watch the sequence</span>`);
+  st.append(phase);
+  const grid = el('div', 'grid');
+  grid.style.setProperty('--n', size);
+  const cells = [];
+  for (let i = 0; i < size * size; i++){
+    const c = el('button', 'cell'); c.disabled = true;
+    cells.push(c); grid.append(c);
+  }
+  st.append(grid);
+  const seq = shuffle([...Array(size * size).keys()]).slice(0, len);
+  await wait(700, s);
+  for (const i of seq){
+    cells[i].classList.add('lit'); sTick();
+    await wait(per, s);
+    cells[i].classList.remove('lit');
+    await wait(160, s);
+  }
+  phase.innerHTML = '按相同顺序点击<span class="pen">Repeat the order</span>';
+  cells.forEach(c => c.disabled = false);
+
+  return await new Promise(resolve => {
+    let next = 0, done = false;
+    cells.forEach((c, i) => c.addEventListener('click', () => {
+      if (done || c.classList.contains('hit')) return;
+      if (seq[next] === i){
+        c.classList.add('hit');
+        c.append(el('span', 'ord', String(next + 1)));
+        sTick();
+        next++;
+        if (next === len){ done = true; resolve(true); }
+      } else {
+        done = true;
+        c.classList.add('miss');
+        seq.forEach((idx, k) => {
+          if (!cells[idx].classList.contains('hit')) cells[idx].append(el('span', 'ord reveal', String(k + 1)));
+        });
+        setTimeout(() => resolve(false), 2200);
+      }
+    }));
+  });
+}
+
+/* ---------- game 6: 翻牌配对 ---------- */
+const PAIR_SYMS = ['🍎','🍋','🍇','🍉','🌸','🍄','⚡','🌙','⭐','🐟','🦋','🎈','🔔','🎵','🌂','🔑','🧭','🎲'];
+async function pairRound(l, s){
+  const nPairs = Math.min(l + 2, 12);
+  const total = nPairs * 2;
+  const cols = total <= 6 ? 3 : total <= 12 ? 4 : total <= 20 ? 5 : 6;
+  const study = Math.min(8000, Math.max(2600, nPairs * 1000 - l * 60));
+  const syms = shuffle(PAIR_SYMS).slice(0, nPairs);
+  const deck = shuffle(syms.flatMap(x => [x, x]));
+
+  const st = stageEl();
+  const phase = el('div', 'phase', `记住 ${nPairs} 对图案的位置<span class="pen">Study the pairs</span>`);
+  st.append(phase);
+  const grid = el('div', 'sym-grid');
+  grid.style.setProperty('--c', cols);
+  const cardEls = deck.map(sym => {
+    const c = el('button', 'sym', sym);
+    c.disabled = true;
+    grid.append(c);
+    return c;
+  });
+  st.append(grid);
+  const bar = progressBar(study);
+  st.append(bar);
+  await wait(study, s);
+  bar.remove();
+  cardEls.forEach(c => { c.textContent = '?'; c.classList.add('blank'); c.disabled = false; });
+
+  const maxMiss = 2;
+  let mistakes = 0;
+  const setPhase = () => {
+    phase.innerHTML = `凭记忆翻出成对图案 · 容错 ${maxMiss - mistakes}/${maxMiss}<span class="pen">Match the pairs</span>`;
+  };
+  setPhase();
+
+  return await new Promise(resolve => {
+    let first = null, lock = false, matchedPairs = 0, done = false;
+    const show = i => { cardEls[i].textContent = deck[i]; cardEls[i].classList.remove('blank'); };
+    const hide = i => { cardEls[i].textContent = '?'; cardEls[i].classList.add('blank'); };
+    cardEls.forEach((c, i) => c.addEventListener('click', () => {
+      if (done || lock || !c.classList.contains('blank')) return;
+      show(i);
+      if (first === null){ first = i; return; }
+      const a = first;
+      first = null;
+      if (deck[a] === deck[i]){
+        cardEls[a].classList.add('hit');
+        c.classList.add('hit');
+        sTick();
+        matchedPairs++;
+        if (matchedPairs === nPairs){ done = true; resolve(true); }
+      } else {
+        mistakes++;
+        tone(220, 0.15, 'sine', 0.07);
+        lock = true;
+        setTimeout(() => {
+          lock = false;
+          if (mistakes > maxMiss){
+            done = true;
+            cardEls.forEach((e2, k) => {
+              if (e2.classList.contains('blank')){
+                e2.textContent = deck[k];
+                e2.classList.remove('blank');
+                e2.classList.add('reveal');
+              }
+            });
+            setTimeout(() => resolve(false), 1800);
+          } else {
+            hide(a); hide(i);
+            setPhase();
+          }
+        }, 750);
+      }
+    }));
+  });
+}
+
 /* ---------- game registry ---------- */
 const GAMES = [
   {
@@ -650,6 +778,18 @@ const GAMES = [
     desc: '记住整版图案，找出唯一变化的那一个。',
     how: ['整版相似图案显示数秒，用心记住每个位置', '短暂遮挡后，其中一个图案被替换', '点出变化的那一格 — 观察时间逐关缩短'],
     round: changeRound,
+  },
+  {
+    id: 'seq', glyph: '迹', name: '顺序追光', en: 'Sequence Trace',
+    desc: '方格逐一亮起，按相同顺序复现路径。',
+    how: ['方格依次亮起，记住先后顺序', '按相同顺序点击，点错即失误', '每关加一步 — 棋盘扩大、节奏加快'],
+    round: seqRound,
+  },
+  {
+    id: 'pairs', glyph: '对', name: '翻牌配对', en: 'Pair Match',
+    desc: '整版图案短暂展示后盖住，凭记忆翻出成对。',
+    how: ['整版成对图案展示数秒，记住每个位置', '盖住后每次翻两张，配对成功保持翻开', '每关容错 2 次翻错，第 3 次失误本关失败'],
+    round: pairRound,
   },
 ];
 
