@@ -1,10 +1,10 @@
 # 最强大脑 · 记忆训练 (Brain Trainer)
 
-A single-file, zero-dependency HTML memory-training game inspired by the Chinese TV show 《最强大脑》 (*The Brain*, Jiangsu TV). Open `index.html` in any modern browser — no build step, no server needed.
+A single-file, zero-dependency HTML brain-training game inspired by the Chinese TV show 《最强大脑》 (*The Brain*, Jiangsu TV) — six memory disciplines plus two attention/speed disciplines. Open `index.html` in any modern browser — no build step, no server needed.
 
 **Play online:** https://tbukuai-coder.github.io/brain-trainer/
 
-## The six challenges
+## The eight challenges
 
 | 项目 | English | Discipline |
 |---|---|---|
@@ -14,6 +14,8 @@ A single-file, zero-dependency HTML memory-training game inspired by the Chinese
 | 微观辨变 | Spot the Change | Observation memory (水哥-style) — study a board of near-identical symbols; one changes; find it. |
 | 顺序追光 | Sequence Trace | Temporal-spatial memory (Simon-style) — cells light up one after another; repeat the exact order. Sequence grows, pace quickens. |
 | 翻牌配对 | Pair Match | Position-binding memory — study an open board of symbol pairs, everything flips face-down, match all pairs with at most 2 wrong flips. |
+| 心算风暴 | Quick Math | Mental arithmetic under a countdown — addition/subtraction, then multiplication, then mixed expressions with standard precedence; time shrinks per level. |
+| 色词对决 | Stroop Test | Attention/inhibition — a color word rendered in a mismatched ink color; tap the swatch matching the *ink*, not the meaning. Streak required per level grows, response window shrinks. |
 
 ## Rules
 

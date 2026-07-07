@@ -252,6 +252,31 @@ main{width:min(860px,94vw);flex:1;padding:22px 0 30px}
 .sym.miss{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad)}
 .sym.reveal{border:2px dashed var(--gold)}
 
+/* calc game */
+.calc-expr{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-size:clamp(30px,6.5vw,48px);font-weight:600;letter-spacing:.08em;
+  color:var(--gold-bright);text-align:center;
+  text-shadow:0 0 26px rgba(255,217,138,.25);
+}
+.calc-expr .calc-ans{color:var(--good)}
+
+/* stroop game */
+.stroop-word{
+  font-family:var(--serif);font-size:clamp(72px,18vw,120px);font-weight:700;
+  line-height:1;min-height:1em;
+}
+.swatches{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.swatch{
+  width:56px;height:56px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.18);
+  transition:transform .1s;
+}
+.swatch:hover{transform:scale(1.06)}
+.swatch.correct{outline:3px dashed var(--ink);outline-offset:3px}
+.swatch.wrongpick{box-shadow:0 0 0 3px var(--bad)}
+.stroop-bar{min-height:3px;display:flex;justify-content:center;width:100%}
+
 /* banner + game over */
 .banner{
   position:absolute;inset:0;display:grid;place-items:center;
@@ -288,7 +313,7 @@ footer{
   <div class="seal" aria-hidden="true">脑</div>
   <div class="titles">
     <h1>最强大脑 <em>·</em> 记忆训练</h1>
-    <p class="sub">六项挑战 · 逐关升级 · 三次机会 — Memory Trainer</p>
+    <p class="sub">八项挑战 · 逐关升级 · 三次机会 — Brain Trainer</p>
   </div>
   <button id="muteBtn" aria-label="切换音效">音效 开</button>
 </header>
@@ -753,6 +778,140 @@ async function pairRound(l, s){
   });
 }
 
+/* ---------- game 7: 心算风暴 ---------- */
+function genCalc(l){
+  const R = (a, b) => a + rnd(b - a + 1);
+  if (l < 4){
+    const hi = l === 1 ? 50 : 99;
+    let a = R(11, hi), b = R(11, hi);
+    if (Math.random() < 0.5) return { txt: `${a} + ${b}`, ans: a + b };
+    if (a < b) [a, b] = [b, a];
+    return { txt: `${a} − ${b}`, ans: a - b };
+  }
+  if (l < 7){
+    if (Math.random() < 0.55){
+      const a = R(6, 12 + l), b = R(3, 9 + l);
+      return { txt: `${a} × ${b}`, ans: a * b };
+    }
+    let a = R(30, 150), b = R(20, 99);
+    if (Math.random() < 0.5){
+      const c = R(10, Math.min(80, a + b - 1));
+      return { txt: `${a} + ${b} − ${c}`, ans: a + b - c };
+    }
+    if (a < b) [a, b] = [b, a];
+    const c = R(10, 80);
+    return { txt: `${a} − ${b} + ${c}`, ans: a - b + c };
+  }
+  const m = Math.min(9 + l, 25);
+  const form = rnd(3);
+  if (form === 0){
+    const a = R(7, m), b = R(6, m), c = R(10, 99);
+    return { txt: `${a} × ${b} + ${c}`, ans: a * b + c };
+  }
+  if (form === 1){
+    const a = R(7, m), b = R(6, m), c = R(10, a * b - 1);
+    return { txt: `${a} × ${b} − ${c}`, ans: a * b - c };
+  }
+  const a = R(10, 99), b = R(4, 12), c = R(4, Math.min(15, 6 + l));
+  return { txt: `${a} + ${b} × ${c}`, ans: a + b * c };
+}
+async function calcRound(l, s){
+  const q = genCalc(l);
+  const timeMs = Math.max(3500, 8500 - l * 350);
+
+  const st = stageEl();
+  st.append(el('div', 'phase', '限时心算<span class="pen">Solve before time runs out</span>'));
+  st.append(el('div', 'calc-expr', `${q.txt} = ?`));
+  const form = el('form', 'recall-form');
+  const inp = el('input', 'digit-input');
+  inp.type = 'text'; inp.inputMode = 'numeric'; inp.autocomplete = 'off';
+  inp.setAttribute('aria-label', '输入答案');
+  const sub = el('button', 'btn primary', '确认'); sub.type = 'submit';
+  form.append(inp, sub); st.append(form);
+  st.append(progressBar(timeMs));
+  inp.focus();
+  const ansP = new Promise(res => {
+    form.addEventListener('submit', e => { e.preventDefault(); res(inp.value.trim()); });
+  });
+  const out = await Promise.race([ansP, sleep(timeMs).then(() => null)]);
+  bail(s);
+  if (out !== null && out !== '' && Number(out) === q.ans) return true;
+
+  const st2 = stageEl();
+  st2.append(el('div', 'phase', out === null ? '时间到' : '不对，正确答案是'));
+  st2.append(el('div', 'calc-expr', `${q.txt} = <span class="calc-ans">${q.ans}</span>`));
+  const cont = el('button', 'btn', '继续');
+  st2.append(cont);
+  await once(cont, 'click'); bail(s);
+  return false;
+}
+
+/* ---------- game 8: 色词对决 ---------- */
+const STROOP = [
+  { n: '红', c: '#FF5A6E' },
+  { n: '黄', c: '#FFD24A' },
+  { n: '绿', c: '#46D69A' },
+  { n: '蓝', c: '#4AA8FF' },
+  { n: '紫', c: '#B07CFF' },
+  { n: '橙', c: '#FF9A3C' },
+];
+async function stroopRound(l, s){
+  const nColors = l < 5 ? 4 : l < 9 ? 5 : 6;
+  const k = Math.min(4 + l, 14);
+  const per = Math.max(1300, 2700 - l * 130);
+  const pal = STROOP.slice(0, nColors);
+
+  const st = stageEl();
+  const phase = el('div', 'phase', '点击文字的颜色，忽略字义<span class="pen">Tap the ink color, not the word</span>');
+  st.append(phase);
+  const counter = el('div', 'card-count', '');
+  const word = el('div', 'stroop-word', '');
+  const row = el('div', 'swatches');
+  const barHolder = el('div', 'stroop-bar');
+  st.append(counter, word, row, barHolder);
+
+  let resolver = null;
+  const btns = pal.map((p, bi) => {
+    const b = el('button', 'swatch');
+    b.style.background = p.c;
+    b.setAttribute('aria-label', p.n);
+    b.onclick = () => { if (resolver) resolver(bi); };
+    row.append(b);
+    return b;
+  });
+
+  for (let t = 0; t < k; t++){
+    counter.textContent = `${t + 1} / ${k}`;
+    const wi = rnd(nColors);
+    let ii = rnd(nColors);
+    if (Math.random() < 0.75){ while (ii === wi) ii = rnd(nColors); }
+    word.textContent = pal[wi].n;
+    word.style.color = pal[ii].c;
+    barHolder.innerHTML = '';
+    barHolder.append(progressBar(per));
+    const pick = await Promise.race([
+      new Promise(r => { resolver = r; }),
+      sleep(per).then(() => -1),
+    ]);
+    resolver = null;
+    bail(s);
+    if (pick !== ii){
+      if (pick >= 0) btns[pick].classList.add('wrongpick');
+      btns[ii].classList.add('correct');
+      phase.innerHTML = pick < 0
+        ? '超时<span class="pen">Too slow</span>'
+        : '要点颜色，不是字义<span class="pen">Ink color, not meaning</span>';
+      await wait(1500, s);
+      return false;
+    }
+    sTick();
+    word.textContent = '·';
+    word.style.color = 'var(--line)';
+    await wait(180, s);
+  }
+  return true;
+}
+
 /* ---------- game registry ---------- */
 const GAMES = [
   {
@@ -790,6 +949,18 @@ const GAMES = [
     desc: '整版图案短暂展示后盖住，凭记忆翻出成对。',
     how: ['整版成对图案展示数秒，记住每个位置', '盖住后每次翻两张，配对成功保持翻开', '每关容错 2 次翻错，第 3 次失误本关失败'],
     round: pairRound,
+  },
+  {
+    id: 'calc', glyph: '算', name: '心算风暴', en: 'Quick Math',
+    desc: '限时心算，难度与速度逐关升级。',
+    how: ['算式出现后限时作答，超时即失误', '前期加减，中期乘法，后期混合运算', '关数越高数字越大、时间越短'],
+    round: calcRound,
+  },
+  {
+    id: 'stroop', glyph: '色', name: '色词对决', en: 'Stroop Test',
+    desc: '点击文字的颜色而非字义，连对通关。',
+    how: ['屏幕显示一个颜色字，字义与颜色常常不符', '点击下方与文字颜色相同的色块', '连对指定次数通关 — 超时或点错即失误'],
+    round: stroopRound,
   },
 ];
 
